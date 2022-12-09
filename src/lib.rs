@@ -7,6 +7,7 @@ use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 
 use near_sdk::env::promise_result;
 use utils::parse_promise_result;
+use near_contract_standards::fungible_token::core::ext_ft_core;
 
 
 #[ext_contract(ext_ft)]
@@ -127,27 +128,43 @@ impl YangAMMContract {
         amount: U128,
         _msg: String,
     ) -> PromiseOrValue<U128> {
+        let token =  env::predecessor_account_id();
         let account_token_a = self.token_a.clone();
         let account_token_b = self.token_b.clone();
-        if env::predecessor_account_id() != account_token_a
-            && env::predecessor_account_id() != account_token_b
+        if token != account_token_a
+            && token != account_token_b
         {
             near_sdk::env::panic_str("Yant AMM contract do not support this token for now!");
         }
-        
+        let balance_token_a: u128 = self.amount_token_a.0;
+        let balance_token_b: u128 = self.amount_token_b.0;
+        let balance_amount: u128 = amount.0;
+        // for contract owner, that means deposit
         if sender_id == self.owner {
             // owner of this contract deposited token a or b. the K will be changed
             // k = amount(a) * amount(b)
-            match env::predecessor_account_id() {
+            match token {
                 account_token_a => {
-                    self.amount_token_a = U128(self.amount_token_a.0 + amount.0)
+                    self.amount_token_a = U128(balance_token_a + balance_amount)
                 },
                 account_token_b => {
-                    self.amount_token_b = U128(self.amount_token_b.0 + amount.0)
+                    self.amount_token_b = U128(balance_token_b + balance_amount)
                 },
                 _ => env::panic_str("Unsupported token"),
             }
             return PromiseOrValue::Value(U128(0));
+        }
+        // for any others, that means swap a from b or b from a.
+        match token {
+            account_token_a => {
+                let amount_token_b_for_swap = U128(balance_token_b - (balance_token_b / balance_token_a) * (balance_token_a - balance_amount));
+                ext_ft_core::ext(account_token_b).with_attached_deposit(1).ft_transfer(sender_id, amount_token_b_for_swap, None);
+            },
+            account_token_b => {
+                let amount_token_a_for_swap = U128(balance_token_a - (balance_token_a / balance_token_b) * (balance_token_b - balance_amount));
+                ext_ft_core::ext(account_token_a).with_attached_deposit(1).ft_transfer(sender_id, amount_token_a_for_swap, None);
+            },
+            _ => env::panic_str("Unsupported token"),
         }
         return PromiseOrValue::Value(U128(0));
     }
