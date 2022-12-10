@@ -8,6 +8,6 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-near-sdk = { path = "../../../near-sdk" }
-near-contract-standards = { path = "../../../near-contract-standards" }
+near-sdk = "4.0.0"
+near-contract-standards = "4.0.0"
 schemars = "0.8"
