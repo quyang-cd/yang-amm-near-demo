@@ -5,6 +5,7 @@ AMM demo build on top of NEAR chain.
 
 ## Gen two tokens on Near Testnet
 We can do this follow this FT examples instruction: https://github.com/near-examples/FT
+Build the FT contract to wasm file and copied it to /res
 
 ### instructions
 #### token A

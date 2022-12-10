@@ -2,38 +2,15 @@ mod utils;
 
 use near_sdk::json_types::U128;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::{env, ext_contract, near_bindgen, AccountId, PromiseOrValue};
+use near_sdk::{env, ext_contract, near_bindgen, AccountId, PanicOnDefault, PromiseOrValue};
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 
 use near_sdk::env::promise_result;
 use utils::parse_promise_result;
 use near_contract_standards::fungible_token::core::ext_ft_core;
 
-
-#[ext_contract(ext_ft)]
-pub trait FT {
-    fn ft_balance_of(&mut self, account_id: AccountId) -> U128;
-
-    fn ft_transfer_call(
-        &mut self,
-        receiver_id: AccountId,
-        amount: U128,
-        memo: Option<String>,
-        msg: String,
-    ) -> PromiseOrValue<U128>;
-
-    fn ft_on_transfer(
-        &mut self,
-        sender_id: AccountId,
-        amount: U128,
-        msg: String,
-    ) -> PromiseOrValue<U128>;
-
-    fn ft_metadata(&self) -> FungibleTokenMetadata;
-}
-
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct YangAMMContract {
 
     owner: AccountId,
@@ -59,6 +36,30 @@ pub struct YangAMMContract {
     metadata_token_b: Option<FungibleTokenMetadata>,
 
 }
+
+#[ext_contract(ext_ft)]
+pub trait FT {
+    fn ft_balance_of(&mut self, account_id: AccountId) -> U128;
+
+    fn ft_transfer_call(
+        &mut self,
+        receiver_id: AccountId,
+        amount: U128,
+        memo: Option<String>,
+        msg: String,
+    ) -> PromiseOrValue<U128>;
+
+    fn ft_on_transfer(
+        &mut self,
+        sender_id: AccountId,
+        amount: U128,
+        msg: String,
+    ) -> PromiseOrValue<U128>;
+
+    fn ft_metadata(&self) -> FungibleTokenMetadata;
+}
+
+
 
 #[ext_contract(ext_self_metadata_trait)]
 pub trait MetadataTrait {
@@ -139,7 +140,7 @@ impl YangAMMContract {
         let balance_token_a: u128 = self.amount_token_a.0;
         let balance_token_b: u128 = self.amount_token_b.0;
         let balance_amount: u128 = amount.0;
-        // for contract owner, that means deposit
+        // for contract owner, that means deposit to change K.
         if sender_id == self.owner {
             // owner of this contract deposited token a or b. the K will be changed
             // k = amount(a) * amount(b)
@@ -186,17 +187,6 @@ mod tests {
     use near_sdk::test_utils::{VMContextBuilder};
     use near_sdk::{testing_env, AccountId};
 
-    #[test]
-    fn debug_get_hash() {
-        // Basic set up for a unit test
-        testing_env!(VMContextBuilder::new().build());
-
-        // Using a unit test to rapidly debug and iterate
-        let debug_solution = "near nomicon ref finance";
-        let debug_hash_bytes = env::sha256(debug_solution.as_bytes());
-        let debug_hash_string = hex::encode(debug_hash_bytes);
-        println!("Let's debug: {:?}", debug_hash_string);
-    }
 
     // part of writing unit tests is setting up a mock context
     // provide a `predecessor` here, it'll modify the default context
@@ -222,8 +212,6 @@ mod tests {
         assert_eq!(contract.token_b, token_b_account_id.clone());
         assert_eq!(contract.amount_token_a, U128(0));
         assert_eq!(contract.amount_token_b, U128(0));
-        // assert_eq!(contract.metadata_token_a.unwrap().decimals, 8);
-        // assert_eq!(contract.metadata_token_b.unwrap().decimals, 8);
     }
 
 }
