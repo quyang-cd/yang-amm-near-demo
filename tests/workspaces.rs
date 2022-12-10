@@ -90,7 +90,7 @@ async fn init(
 
     let res = amm_contract
         .call("new")
-        .args_json((alice.id(), token_a_contract.id(), token_b_contract.id(),))
+        .args_json((alice.id(), token_a_contract.id(), token_b_contract.id()))
         .max_gas()
         .transact()
         .await?;
@@ -108,6 +108,6 @@ async fn amm_tests() -> anyhow::Result<()> {
     let worker = workspaces::sandbox().await?;
     let (alice, bob, token_a_contract, token_b_contract, amm_contract) = init(&worker, initial_balance).await?;
 
-    let res = amm_contract.call("tokens_metadata").view().await?.json()?;
+    // let res = amm_contract.call("tokens_metadata").view().await?.json()?;
     Ok(())
 }

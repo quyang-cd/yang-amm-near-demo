@@ -2,4 +2,4 @@
 rustflags = ["-C", "link-arg=-s"]
 
 [build]
-target-dir = "../../target"
+target-dir = "./target"
