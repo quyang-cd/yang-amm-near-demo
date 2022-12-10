@@ -2,12 +2,18 @@ mod utils;
 
 use near_sdk::json_types::U128;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::{env, ext_contract, near_bindgen, AccountId, PanicOnDefault, PromiseOrValue};
+use near_sdk::{env, ext_contract, near_bindgen, require, AccountId, PanicOnDefault, PromiseOrValue};
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 
 use near_sdk::env::promise_result;
 use utils::parse_promise_result;
 use near_contract_standards::fungible_token::core::ext_ft_core;
+
+#[derive(BorshDeserialize, BorshSerialize)]
+pub struct TokensMetadata {
+    pub metadata_token_a: FungibleTokenMetadata,
+    pub metadata_token_b: FungibleTokenMetadata,
+}
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -100,7 +106,7 @@ impl YangAMMContract {
 
     #[init]
     pub fn new(owner: AccountId, token_a: AccountId, token_b: AccountId) -> Self {
-
+        require!(!env::state_exists(), "Already initialized");
         ext_ft::ext(token_a.clone()).ft_metadata()
         .and(
             ext_ft::ext(token_a.clone()).ft_metadata()
@@ -130,10 +136,10 @@ impl YangAMMContract {
         _msg: String,
     ) -> PromiseOrValue<U128> {
         let token =  env::predecessor_account_id();
-        let account_token_a = self.token_a.clone();
-        let account_token_b = self.token_b.clone();
-        if token != account_token_a
-            && token != account_token_b
+        let _account_token_a = self.token_a.clone();
+        let _account_token_b = self.token_b.clone();
+        if token != _account_token_a
+            && token != _account_token_b
         {
             near_sdk::env::panic_str("Yant AMM contract do not support this token for now!");
         }
@@ -145,10 +151,10 @@ impl YangAMMContract {
             // owner of this contract deposited token a or b. the K will be changed
             // k = amount(a) * amount(b)
             match token {
-                account_token_a => {
+                _account_token_a => {
                     self.amount_token_a = U128(balance_token_a + balance_amount)
                 },
-                account_token_b => {
+                _account_token_b => {
                     self.amount_token_b = U128(balance_token_b + balance_amount)
                 },
                 _ => env::panic_str("Unsupported token"),
@@ -157,17 +163,25 @@ impl YangAMMContract {
         }
         // for any others, that means swap a from b or b from a.
         match token {
-            account_token_a => {
+            _account_token_a => {
                 let amount_token_b_for_swap = U128(balance_token_b - (balance_token_b / balance_token_a) * (balance_token_a - balance_amount));
-                ext_ft_core::ext(account_token_b).with_attached_deposit(1).ft_transfer(sender_id, amount_token_b_for_swap, None);
+                ext_ft_core::ext(_account_token_b).with_attached_deposit(1).ft_transfer(sender_id, amount_token_b_for_swap, None);
             },
-            account_token_b => {
+            _account_token_b => {
                 let amount_token_a_for_swap = U128(balance_token_a - (balance_token_a / balance_token_b) * (balance_token_b - balance_amount));
-                ext_ft_core::ext(account_token_a).with_attached_deposit(1).ft_transfer(sender_id, amount_token_a_for_swap, None);
+                ext_ft_core::ext(_account_token_a).with_attached_deposit(1).ft_transfer(sender_id, amount_token_a_for_swap, None);
             },
             _ => env::panic_str("Unsupported token"),
         }
         return PromiseOrValue::Value(U128(0));
+    }
+
+    #[result_serializer(borsh)]
+    pub fn tokens_metadata(self) -> TokensMetadata {
+        return TokensMetadata {
+            metadata_token_a: self.metadata_token_a.unwrap(),
+            metadata_token_b: self.metadata_token_b.unwrap(),
+        };
     }
 
 }

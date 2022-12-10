@@ -1,0 +1,13 @@
+[package]
+name = "yang-amm"
+version = "0.1.0"
+authors = ["NEAR Lover <quyang.chengdu@gmail.com>"]
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+near-sdk = "4.0.0"
+near-contract-standards = "4.0.0"
+schemars = "0.8"

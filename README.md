@@ -10,5 +10,5 @@ To build run:
 ## Testing
 To test run:
 ```bash
-cargo test --package yang-amm-near-demo -- --nocapture
+cargo test --workspace -- --nocapture
 ```
