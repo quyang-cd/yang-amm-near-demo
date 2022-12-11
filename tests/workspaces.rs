@@ -108,6 +108,8 @@ async fn amm_tests() -> anyhow::Result<()> {
     let worker = workspaces::sandbox().await?;
     let (alice, bob, token_a_contract, token_b_contract, amm_contract) = init(&worker, initial_balance).await?;
 
-    // let res = amm_contract.call("tokens_metadata").view().await?.json()?;
+    let res = amm_contract.call("tokens_metadata").view().await?.json()?;
+    // print th result
+    println!("{:?}", res);
     Ok(())
 }
