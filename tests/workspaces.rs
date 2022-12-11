@@ -108,8 +108,16 @@ async fn amm_tests() -> anyhow::Result<()> {
     let worker = workspaces::sandbox().await?;
     let (alice, bob, token_a_contract, token_b_contract, amm_contract) = init(&worker, initial_balance).await?;
 
+    
+    // 0 check the metadata of token_a and token_b
     let res = amm_contract.call("tokens_metadata").view().await?.json()?;
-    // print th result
-    println!("{:?}", res);
+    // 1 alice(owner) transfer token_a to amm contract
+
+    // 2 alice(owner) transfer token_b to amm contract
+
+    // 3 bob(non owner) transfer token_a to amm contract
+
+    // 4 bob(non owner) transfer token_b to amm contract
+
     Ok(())
 }
