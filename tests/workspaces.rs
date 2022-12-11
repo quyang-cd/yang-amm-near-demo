@@ -108,16 +108,70 @@ async fn amm_tests() -> anyhow::Result<()> {
     let worker = workspaces::sandbox().await?;
     let (alice, bob, token_a_contract, token_b_contract, amm_contract) = init(&worker, initial_balance).await?;
 
-    
+    register_user(&token_a_contract, amm_contract.id()).await?;
+    register_user(&token_b_contract, amm_contract.id()).await?;
+
     // 0 check the metadata of token_a and token_b
     let res = amm_contract.call("tokens_metadata").view().await?.json()?;
     // 1 alice(owner) transfer token_a to amm contract
+    let res = token_a_contract
+        .call("ft_transfer_call")
+        .args_json((
+            amm_contract.id(),
+            transfer_amount,
+            Option::<String>::None,
+            "owner transfer token A to change K.",
+        ))
+        .max_gas()
+        .deposit(ONE_YOCTO)
+        .transact()
+        .await?;
+    assert!(res.is_success());
 
+    let token_a_balance = token_a_contract
+        .call("ft_balance_of")
+        .args_json((token_a_contract.id(),))
+        .view()
+        .await?
+        .json::<U128>()?;
+    let amm_balance = token_a_contract
+        .call("ft_balance_of")
+        .args_json((amm_contract.id(),))
+        .view()
+        .await?
+        .json::<U128>()?;
+    assert_eq!(initial_balance.0 - transfer_amount.0, amm_balance.0);
+    assert_eq!(transfer_amount.0, amm_balance.0);
     // 2 alice(owner) transfer token_b to amm contract
+    let res = token_b_contract
+        .call("ft_transfer_call")
+        .args_json((
+            amm_contract.id(),
+            transfer_amount,
+            Option::<String>::None,
+            "owner transfer token B to change K.",
+        ))
+        .max_gas()
+        .deposit(ONE_YOCTO)
+        .transact()
+        .await?;
+    assert!(res.is_success());
 
-    // 3 bob(non owner) transfer token_a to amm contract
+    let token_b_balance = token_b_contract
+        .call("ft_balance_of")
+        .args_json((token_b_contract.id(),))
+        .view()
+        .await?
+        .json::<U128>()?;
+    let amm_balance = token_b_contract
+        .call("ft_balance_of")
+        .args_json((amm_contract.id(),))
+        .view()
+        .await?
+        .json::<U128>()?;
+    // 3 bob(non owner) transfer token A to amm contract, would reward some token B
 
-    // 4 bob(non owner) transfer token_b to amm contract
+    // 4 bob(non owner) transfer token_B to amm contract, would reward some token A
 
     Ok(())
 }

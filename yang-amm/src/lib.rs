@@ -163,10 +163,12 @@ impl YangAMMContract {
         }
         // for any others, that means swap a from b or b from a.
         match token {
+            // balance_token_a * balance_token_b = k = (balance_token_a + balance_amount) * (balance_token_b - amount_token_b_for_swap)
             _account_token_a => {
                 let amount_token_b_for_swap = U128(balance_token_b - (balance_token_b / balance_token_a) * (balance_token_a - balance_amount));
                 ext_ft_core::ext(_account_token_b).with_attached_deposit(1).ft_transfer(sender_id, amount_token_b_for_swap, None);
             },
+            // balance_token_a * balance_token_b = k = (balance_token_a - amount_token_a_for_swap) * (balance_token_b  + balance_amount)
             _account_token_b => {
                 let amount_token_a_for_swap = U128(balance_token_a - (balance_token_a / balance_token_b) * (balance_token_b - balance_amount));
                 ext_ft_core::ext(_account_token_a).with_attached_deposit(1).ft_transfer(sender_id, amount_token_a_for_swap, None);
